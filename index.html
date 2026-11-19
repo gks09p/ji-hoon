@@ -465,7 +465,7 @@ body{position:relative}
       <button class="btn y" id="goN">📒 틀린 문제 / 오답노트<small id="noteCnt"></small></button>
       <button class="btn" id="goHub" style="grid-column:1/-1;background:#a855f7;color:#fff;box-shadow:0 6px 0 #6b21a8,0 8px 0 #111">🎒 내 보물창고 <span id="hubCnt"></span><small>🛍️ 꾸미기 상점 · 🎁 상자 · 🏅 배지 · 📊 내 기록</small></button>
     </div>
-    <div class="scorebar"><span id="bestT"></span><span id="bestB"></span><span id="sndBtn" style="cursor:pointer"></span><span id="instBtn" style="cursor:pointer;display:none;background:#f5cd30;color:#111">📲 앱 설치</span></div>
+    <div class="scorebar"><span id="bestT"></span><span id="bestB"></span><span id="useT"></span><span id="sndBtn" style="cursor:pointer"></span><span id="instBtn" style="cursor:pointer;display:none;background:#f5cd30;color:#111">📲 앱 설치</span></div>
   </div>
 </div>
 
@@ -4124,7 +4124,7 @@ const GNO=['아니야!','어라?','앗!','다시!','아깝다!','땡!'],GOK=['�
  LVUP=['새로운 칭호 획득!','한 단계 더 강해졌어요!','레벨 업! 두뇌 파워 상승!','이 속도면 만렙도 문제없어요!','성장하는 {n}, 멋져요!','공부도 레벨 업!'];
 function setCheer(r,n){return nmf(bag('set',r>=n?SETP:r>=n*.8?SET8:r>=n*.6?SET6:SET0))}
 /* ===== 이어하기 · 업데이트 안내 ===== */
-const APP_VER='2026-11-19d';
+const APP_VER='2026-11-19e';
 const CHANGES=['⏩ 이어하기 — 처음 접속하면 어제 하던 걸 물어봐요','🎉 격려 말이 훨씬 다양해졌어요','🔁 틀린 횟수 알림 · 2번 이상 틀린 문제 2배','🛡️ 레벨·용돈은 업데이트해도 그대로예요'];
 const LAST_PREV=store.get('wb_last',null);
 let LAST=Object.assign({d:'',kind:'',cnt:0,ok:0},LAST_PREV||{});
@@ -5167,6 +5167,24 @@ function enWhy(w,picked,fold){
   return '<div class="sqsec why"><div class="whyh">🤔 <b>왜 틀렸지?</b> <small>아주 쉽게 알려 줄게요</small></div>'+s+'</div>';
 }
 
+/* ===== 오늘 사용 시간: 화면이 켜져 있고 앱이 보일 때만 1초씩 세요 ===== */
+let USE=store.get('wb_use',{});
+function useFmt(s){const m=Math.floor(s/60);return m<1?(s<10?'0분':s+'초'):m<60?m+'분':Math.floor(m/60)+'시간 '+(m%60)+'분'}
+function useToday(){const d=wonToday();if(USE.d!==d){USE.hist=USE.hist||{};if(USE.d)USE.hist[USE.d]=USE.s||0;const ks=Object.keys(USE.hist).sort();while(ks.length>30)delete USE.hist[ks.shift()];USE.d=d;USE.s=0}return USE.s||0}
+function useShow(){const e=$('useT');if(e)e.textContent='⏱️ 오늘 '+useFmt(useToday())}
+function useBox(rows){const ov=document.createElement('div');ov.className='boxfx';ov.innerHTML='<div class="bxc"><div class="bxt" style="font-size:20px">⏱️ 최근 7일 사용 시간</div><div style="font-size:18px;line-height:1.9;margin:8px 0">'+rows.join('<br>')+'</div><button class="btn y">닫기</button></div>';ov.querySelector('button').onclick=()=>ov.remove();ov.onclick=e=>{if(e.target===ov)ov.remove()};document.body.appendChild(ov)}
+(function(){
+  let n=0;
+  setInterval(()=>{
+    if(document.hidden)return;
+    useToday();USE.s=(USE.s||0)+1;useShow();
+    if(++n%10===0)store.set('wb_use',USE);
+  },1000);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)store.set('wb_use',USE)});
+  window.addEventListener('pagehide',()=>store.set('wb_use',USE));
+  const e=$('useT');if(e){e.onclick=()=>{const h=Object.assign({},USE.hist||{});h[USE.d]=USE.s||0;const ks=Object.keys(h).sort().slice(-7).reverse();useBox(ks.map(k=>k.slice(5).replace('-','/')+' : '+useFmt(h[k])))}}
+  useShow();
+})();
 /* ===== 설치형 앱(PWA): 홈 화면에 설치 + 인터넷 없이도 실행 ===== */
 (function(){
   if(!/^https?:$/.test(location.protocol))return;          // 파일로 직접 열었을 때는 건너뜀
